@@ -20,6 +20,8 @@ const App = () => {
     setResults([]); // Reset previous results
     
     try {
+      console.log("Sending request with filters:", filters);
+
       const response = await fetch("http://127.0.0.1:5000/search", {
         method: "POST",
         headers: {
@@ -38,14 +40,17 @@ const App = () => {
               : [],
         }),
       });
+      
       const data = await response.json();
+      console.log("Response received:", data);  // Debug log for response
 
       if (response.ok) {
-        setResults(data.results);  // Set the results to the state
+        setResults(data.results || []);  // Set the results to the state
       } else {
         setError(data.error || "Something went wrong");
       }
     } catch (err) {
+      console.error("Error during fetch:", err);  // Debug log for errors
       setError("Failed to fetch data. Please try again.");
     } finally {
       setLoading(false);  // Set loading to false after the request is completed
@@ -140,13 +145,32 @@ const App = () => {
         {error && <div className="text-red-500 mt-4">{error}</div>}
         <div className="mt-6">
           {results.length > 0 ? (
-            <ul>
-              {results.map((result, index) => (
-                <li key={index} className="border-b py-2">
-                  <pre className="text-sm text-gray-700">{JSON.stringify(result, null, 2)}</pre>
-                </li>
-              ))}
-            </ul>
+            <div className="overflow-x-auto">
+              <table className="min-w-full bg-white border border-gray-200">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="py-2 px-4 text-left border-b">Job</th>
+                    <th className="py-2 px-4 text-left border-b">Hobbies</th>
+                    <th className="py-2 px-4 text-left border-b">Age</th>
+                    <th className="py-2 px-4 text-left border-b">Location</th>
+                    <th className="py-2 px-4 text-left border-b">Qualities</th>
+                    <th className="py-2 px-4 text-left border-b">Gender</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {results.map((result, index) => (
+                    <tr key={index} className="odd:bg-gray-50 even:bg-gray-100">
+                      <td className="py-2 px-4 border-b">{result["Job Role"] || "N/A"}</td>
+                      <td className="py-2 px-4 border-b">{result.Hobbies || "N/A"}</td>
+                      <td className="py-2 px-4 border-b">{result.Age || "N/A"}</td>
+                      <td className="py-2 px-4 border-b">{result["Location of Job"] || "N/A"}</td>
+                      <td className="py-2 px-4 border-b">{result["Qualities in Life Partner"] || "N/A"}</td>
+                      <td className="py-2 px-4 border-b">{result.Gender || "N/A"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           ) : (
             !loading && <p className="text-gray-500">No results found.</p>
           )}

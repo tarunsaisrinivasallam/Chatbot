@@ -3,7 +3,7 @@ from flask_cors import CORS
 import pandas as pd
 
 app = Flask(__name__)
-CORS(app) 
+CORS(app)  # Enable CORS for all routes
 
 # Load dataset
 file_path = r"./gopaldataset.csv"
@@ -22,23 +22,34 @@ def search():
     try:
         # Get request data
         filters = request.json
-        job_query = filters.get("job_query", "").lower()
+        
+        # Ensure job_query is a string
+        job_query = filters.get("job_query", "").lower() if filters.get("job_query") else ""
+        
+        # Ensure hobby_query and qualities_query are lists (split only if they're strings)
         hobby_query = filters.get("hobby_query", [])
+        if isinstance(hobby_query, str):
+            hobby_query = hobby_query.split(",")
+        
         age_range = filters.get("age_range", [])
-        location_query = filters.get("location_query", "").lower()
+        location_query = filters.get("location_query", "").lower() if filters.get("location_query") else ""
+        
         qualities_query = filters.get("qualities_query", [])
-        gender_query = filters.get("gender_query", "").lower()
+        if isinstance(qualities_query, str):
+            qualities_query = qualities_query.split(",")
+        
+        gender_query = filters.get("gender_query", "").lower() if filters.get("gender_query") else ""
 
         # Define row matching logic
         def row_matches(row):
-            job_match = job_query in row["job"].lower() if "job" in row and pd.notnull(row["job"]) else False
-            hobby_match = any(hobby.lower() in row["hobbies"].lower() for hobby in hobby_query) if hobby_query and "hobbies" in row and pd.notnull(row["hobbies"]) else False
-            age_match = int(row["age"]) in age_range if age_range and "age" in row and pd.notnull(row["age"]) else False
-            location_match = location_query in row["location"].lower() if location_query and "location" in row and pd.notnull(row["location"]) else False
-            qualities_match = any(quality.lower() in row["qualities"].lower() for quality in qualities_query) if qualities_query and "qualities" in row and pd.notnull(row["qualities"]) else False
-            gender_match = gender_query == row["gender"].lower() if gender_query and "gender" in row and pd.notnull(row["gender"]) else False
+            job_match = job_query in row["job"].lower() if "job" in row and pd.notnull(row["job"]) else True
+            hobby_match = any(hobby.lower() in row["hobbies"].lower() for hobby in hobby_query) if hobby_query and "hobbies" in row and pd.notnull(row["hobbies"]) else True
+            age_match = int(row["age"]) in age_range if age_range and "age" in row and pd.notnull(row["age"]) else True
+            location_match = location_query in row["location"].lower() if location_query and "location" in row and pd.notnull(row["location"]) else True
+            qualities_match = any(quality.lower() in row["qualities"].lower() for quality in qualities_query) if qualities_query and "qualities" in row and pd.notnull(row["qualities"]) else True
+            gender_match = gender_query == row["gender"].lower() if gender_query and "gender" in row and pd.notnull(row["gender"]) else True
 
-            return job_match or hobby_match or age_match or location_match or qualities_match or gender_match
+            return job_match and hobby_match and age_match and location_match and qualities_match and gender_match
 
         # Apply filter
         filtered_data = data[data.apply(row_matches, axis=1)]
